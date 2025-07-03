@@ -1,9 +1,56 @@
+// Function to save user preferences to localStorage
+function savePreferences(timeOfDay, focusArea, timeAvailable, energyLevel, preferredActivities) {
+  const preferences = {
+    timeOfDay,
+    focusArea,
+    timeAvailable,
+    energyLevel,
+    preferredActivities
+  };
+  localStorage.setItem('routinePreferences', JSON.stringify(preferences));
+  console.log('Preferences saved successfully!');
+}
+
+// Function to load user preferences from localStorage
+function loadPreferences() {
+  const savedPreferences = localStorage.getItem('routinePreferences');
+  if (savedPreferences) {
+    const preferences = JSON.parse(savedPreferences);
+    
+    // Set dropdown values
+    document.getElementById('timeOfDay').value = preferences.timeOfDay || 'Morning';
+    document.getElementById('focusArea').value = preferences.focusArea || 'Productivity';
+    document.getElementById('timeAvailable').value = preferences.timeAvailable || '15';
+    document.getElementById('energyLevel').value = preferences.energyLevel || 'Medium';
+    
+    // Set checkbox values
+    const allCheckboxes = document.querySelectorAll('input[name="activities"]');
+    allCheckboxes.forEach(checkbox => {
+      checkbox.checked = preferences.preferredActivities.includes(checkbox.value);
+    });
+  }
+}
+
+// Load saved preferences when the page loads
+document.addEventListener('DOMContentLoaded', loadPreferences);
+
 // Add an event listener to the form that runs when the form is submitted
 document.getElementById('routineForm').addEventListener('submit', async (e) => {
   // Prevent the form from refreshing the page
   e.preventDefault();
   
-  // TODO: Get values from all inputs and store them in variables
+  // Get values from all form inputs and store them in variables
+  const timeOfDay = document.getElementById('timeOfDay').value;
+  const focusArea = document.getElementById('focusArea').value;
+  const timeAvailable = document.getElementById('timeAvailable').value;
+  const energyLevel = document.getElementById('energyLevel').value;
+  
+  // Get all checked preferred activities
+  const checkedActivities = document.querySelectorAll('input[name="activities"]:checked');
+  const preferredActivities = Array.from(checkedActivities).map(checkbox => checkbox.value);
+  
+  // Save preferences to localStorage
+  savePreferences(timeOfDay, focusArea, timeAvailable, energyLevel, preferredActivities);
   
   // Find the submit button and update its appearance to show loading state
   const button = document.querySelector('button[type="submit"]');
@@ -22,7 +69,15 @@ document.getElementById('routineForm').addEventListener('submit', async (e) => {
         model: 'gpt-4o',
         messages: [      
           { role: 'system', content: `You are a helpful assistant that creates quick, focused daily routines. Always keep routines short, realistic, and tailored to the user's preferences.` },
-          { role: 'user', content: '' }
+          { role: 'user', content: `Please create a personalized daily routine based on these preferences:
+          
+Time of Day: ${timeOfDay}
+Focus Area: ${focusArea}
+Time Available: ${timeAvailable} minutes
+Energy Level: ${energyLevel}
+Preferred Activities: ${preferredActivities.length > 0 ? preferredActivities.join(', ') : 'No specific preferences'}
+
+Please provide a structured, step-by-step routine that fits these parameters. Make it practical and easy to follow.` }
         ],
         temperature: 0.7,
         max_completion_tokens: 500
